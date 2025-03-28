@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Main Page</title>
+    <style>
+        body {
+            font-family: sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            margin: 0;
+            background-color: #B0C400;
+        }
+
+        .button-container {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            padding: 20px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            background-color: #fff;
+        }
+
+        .button {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            background-color: #007bff;
+            color: white;
+            cursor: pointer;
+            text-align: center;
+            text-decoration: none;
+            display: block; /* Make buttons full width of container */
+        }
+
+        .button:hover {
+            background-color: #0056b3;
+        }
+    </style>
+</head>
+<body>
+    <h1>Welcome</h1>
+    <div class="button-container">
+        <a href="/register" class="button">Register</a>
+        <a href="/changePassword" class="button">Change Password</a>
+        <a href="/login" class="button">Login</a>
+        <a href="/systemScreen" class="button">System Screen</a>
+        <a href="/forgotPassword" class="button">Forgot Password</a>
+    </div>
+</body>
+</html>
