@@ -1,5 +1,19 @@
+import os
+
+import sqlalchemy
 from flask import Flask, render_template, send_from_directory
+import mysql.connector
+from os import getenv
+
 import hashexercise
+
+# Connect to the database
+conn = mysql.connector.connect(
+    host=getenv('DB_HOST'),
+    user=getenv('DB_USER'),
+    password=getenv('DB_PASS'),
+    database=getenv('DB_DBNAME')
+)
 
 app = Flask(__name__)
 
