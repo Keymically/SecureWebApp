@@ -1,7 +1,7 @@
 import os
 
 import sqlalchemy
-from flask import Flask, render_template, send_from_directory
+from flask import Flask, render_template, send_from_directory, request, jsonify
 import mysql.connector
 from os import getenv
 
@@ -41,6 +41,19 @@ def systemScreen():
 def forgotPassword():
     return '<h1>How did you forget your password we havn\'t even implemented those</h1>'
 
+@app.route('/api/login', methods=['POST'])
+def apilogin():
+    data = request.get_json()  # parse JSON body
+
+    username = data.get('username')
+    password = data.get('password')
+    print(username + " " + password)
+
+    if username == "admin" and password == "1234":
+        return jsonify({ "success": True, "message": "Logged in!" }), 200
+    else:
+        return f"<h3> {username} is here!!</h3>"
+        # return jsonify({ "success": False, "message": "Invalid credentials" }), 401
 
 
 

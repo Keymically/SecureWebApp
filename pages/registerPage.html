@@ -18,6 +18,7 @@
             padding: 20px;
             border-radius: 10px;
             box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            width: 300px;
         }
         input {
             display: block;
@@ -39,16 +40,36 @@
         button:hover {
             background: #218838;
         }
+        .feedback {
+            margin-top: 10px;
+            color: #155724;
+            background-color: #d4edda;
+            border: 1px solid #c3e6cb;
+            padding: 10px;
+            border-radius: 5px;
+            display: none;
+        }
     </style>
 </head>
 <body>
     <div class="container">
         <h2>Register</h2>
-        <form>
-            <input type="text" placeholder="Username" required>
+        <form id="registerForm">
+            <input type="text" id="username" placeholder="Username" required>
             <input type="password" placeholder="Password" required>
             <button type="submit">Register</button>
         </form>
+        <div class="feedback" id="feedback"></div>
     </div>
+
+    <script>
+        document.getElementById('registerForm').addEventListener('submit', function(event) {
+            event.preventDefault(); // Prevent actual form submission
+            const username = document.getElementById('username').value;
+            const feedback = document.getElementById('feedback');
+            feedback.innerText = `Registration successful! Welcome, ${username}.`;
+            feedback.style.display = 'block';
+        });
+    </script>
 </body>
 </html>
