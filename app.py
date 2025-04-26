@@ -4,15 +4,20 @@ import sqlalchemy
 from flask import Flask, render_template, send_from_directory, request, jsonify
 import mysql.connector
 from os import getenv
-
+from dotenv import load_dotenv
 import hashexercise
+from server_logic import apiRegister
 
+load_dotenv()
+
+print(getenv('DB_HOST'), getenv('DB_USER'), getenv('DB_PASS'))
 # Connect to the database
 conn = mysql.connector.connect(
     host=getenv('DB_HOST'),
     user=getenv('DB_USER'),
     password=getenv('DB_PASS'),
-    database=getenv('DB_DBNAME')
+    database=getenv('DB_DBNAME'),
+    use_pure=True
 )
 
 app = Flask(__name__)
@@ -24,7 +29,7 @@ def hello_world():  # put application's code here
 
 @app.route('/register')
 def register():
-    # hashexercise.hash_pass() #when user is registering we will hash with salt and store the hashed result in the DB
+    #hashexercise.hash_pass() #when user is registering we will hash with salt and store the hashed result in the DB
     return send_from_directory(".", path="pages/registerPage.html")
 @app.route('/changePassword')
 def changePassword():
@@ -56,6 +61,13 @@ def apilogin():
         # return jsonify({ "success": False, "message": "Invalid credentials" }), 401
 
 
+@app.route('/api/register', methods=['POST'])
+def apiregister():
+    data = request.get_json()  # parse JSON body
+    apiRegister.handle_register(data)
+    username = data.get('username')
+    password = data.get('password')
 
+    return jsonify({ "success": True, "message": "thanks" }), 200
 if __name__ == '__main__':
     app.run()

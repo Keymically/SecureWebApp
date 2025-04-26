@@ -52,24 +52,38 @@
     </style>
 </head>
 <body>
-    <div class="container">
-        <h2>Register</h2>
-        <form id="registerForm">
-            <input type="text" id="username" placeholder="Username" required>
-            <input type="password" placeholder="Password" required>
-            <button type="submit">Register</button>
-        </form>
-        <div class="feedback" id="feedback"></div>
-    </div>
+<div class="container">
+    <h2>Register</h2>
+    <form id="registerForm">
+        <input type="text" id="username" placeholder="Username" required>
+        <input type="password" id="password" placeholder="Password" required>
+        <button type="submit">Register</button>
+    </form>
+    <div class="feedback" id="feedback"></div>
+</div>
 
-    <script>
-        document.getElementById('registerForm').addEventListener('submit', function(event) {
-            event.preventDefault(); // Prevent actual form submission
-            const username = document.getElementById('username').value;
-            const feedback = document.getElementById('feedback');
-            feedback.innerText = `Registration successful! Welcome, ${username}.`;
-            feedback.style.display = 'block';
-        });
-    </script>
+<script>
+    document.getElementById('registerForm').addEventListener('submit',async function(event) {
+        event.preventDefault(); // Prevent actual form submission
+        const username = document.getElementById('username').value;
+        const password = document.getElementById('password').value
+        const feedback = document.getElementById('feedback');
+        feedback.innerText = `Registration successful! Welcome, ${username}.`;
+        feedback.style.display = 'block';
+
+        try{
+            const response = await fetch("/api/register", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({ username, password })
+            });
+
+        } catch (err) {
+
+        }
+    });
+</script>
 </body>
 </html>
