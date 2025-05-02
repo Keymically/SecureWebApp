@@ -1,8 +1,9 @@
 import bcrypt
 import hashlib
-from app import conn
+
 
 def save_userDB(username,password,salt):
+    from app import conn
     cursor = conn.cursor()
     #Open Connection
     insert_user = "INSERT INTO users (username, hashed_password) VALUES (%s, %s)"

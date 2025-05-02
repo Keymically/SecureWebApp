@@ -7,7 +7,7 @@ from os import getenv
 from dotenv import load_dotenv
 import hashexercise
 from server_logic import apiRegister
-
+#test
 load_dotenv()
 
 print(getenv('DB_HOST'), getenv('DB_USER'), getenv('DB_PASS'))
