@@ -6,7 +6,7 @@ def hash_pass():
     salt = bcrypt.gensalt()
     print(f"the salt is {salt}")
     hashed = bcrypt.hashpw(rawinput.encode(),salt)
-    print(f"the hashed password is {hashed}")
+    print(f"the hashed password is shrek is dead {hashed}")
     return hashed.decode() #why decode?
 
 
