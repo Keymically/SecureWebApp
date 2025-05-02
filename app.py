@@ -27,6 +27,14 @@ app = Flask(__name__)
 def hello_world():  # put application's code here
     return send_from_directory(".", path="pages/index.html")
 
+@app.route('/click')
+def click():
+    cursor = conn.cursor()
+    cursor.execute("SELECT * FROM users")
+    results = cursor.fetchall()
+    for row in results:
+        print(row)
+    return jsonify(results)
 @app.route('/register')
 def register():
     #hashexercise.hash_pass() #when user is registering we will hash with salt and store the hashed result in the DB
