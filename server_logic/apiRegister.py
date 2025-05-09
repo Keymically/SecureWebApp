@@ -1,11 +1,21 @@
 import bcrypt
 import hashlib
+import mysql.connector
+from os import getenv
+
+def get_db_connection():
+    return mysql.connector.connect(
+        host=getenv('DB_HOST'),
+        user=getenv('DB_USER'),
+        password=getenv('DB_PASS'),
+        database=getenv('DB_DBNAME'),
+        use_pure=True
+    )
 
 
 def save_userDB(username,password,salt):
-    from app import conn
+    conn = get_db_connection()
     cursor = conn.cursor()
-    #Open Connection
     insert_user = "INSERT INTO users (username, hashed_password) VALUES (%s, %s)"
     cursor.execute(insert_user, (username, password))
     user_id = cursor.lastrowid
