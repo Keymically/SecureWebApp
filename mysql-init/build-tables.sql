@@ -1,0 +1,12 @@
+CREATE TABLE if not exists users (
+    ID INT AUTO_INCREMENT PRIMARY KEY,
+    username VARCHAR(255) NOT NULL,
+    hashed_password VARCHAR(255) NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE if not exists salts (
+    ID INT PRIMARY KEY,
+    salt VARCHAR(255) NOT NULL,
+    FOREIGN KEY (ID) REFERENCES users(ID) ON DELETE CASCADE
+);

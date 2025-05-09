@@ -1,0 +1,7 @@
+# MySQL root password (for initial setup)
+MYSQL_ROOT_PASSWORD=config-this
+
+DB_HOST=config-this
+DB_USER=config-this
+DB_PASS=config-this
+DB_DBNAME=config-this

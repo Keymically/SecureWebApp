@@ -8,19 +8,15 @@ import hashexercise
 from server_logic import apiRegister
 #test
 load_dotenv()
-
-print(getenv('DB_HOST'), getenv('DB_USER'), getenv('DB_PASS'))
-# Connect to the database
-conn = mysql.connector.connect(
-    host=getenv('DB_HOST'),
-    user=getenv('DB_USER'),
-    password=getenv('DB_PASS'),
-    database=getenv('DB_DBNAME'),
-    use_pure=True
-)
-
 app = Flask(__name__)
-
+def get_db_connection():
+    return mysql.connector.connect(
+        host=getenv('DB_HOST'),
+        user=getenv('DB_USER'),
+        password=getenv('DB_PASS'),
+        database=getenv('DB_DBNAME'),
+        use_pure=True
+    )
 
 @app.route('/')
 def hello_world():  # put application's code here
@@ -28,11 +24,12 @@ def hello_world():  # put application's code here
 
 @app.route('/click')
 def click():
+    conn = get_db_connection()
     cursor = conn.cursor()
     cursor.execute("SELECT * FROM users")
     results = cursor.fetchall()
-    for row in results:
-        print(row)
+    cursor.close()
+    conn.close()
     return jsonify(results)
 @app.route('/register')
 def register():
