@@ -1,11 +1,11 @@
 import os
-
 from flask import Flask, render_template, send_from_directory, request, jsonify
 import mysql.connector
 from os import getenv
 from dotenv import load_dotenv
-import hashexercise
+
 from server_logic import apiRegister
+
 #test
 load_dotenv()
 app = Flask(__name__)
@@ -67,11 +67,16 @@ def apilogin():
 
 @app.route('/api/register', methods=['POST'])
 def apiregister():
-    data = request.get_json()  # parse JSON body
-    apiRegister.handle_register(data)
+    data = request.get_json()
     username = data.get('username')
     password = data.get('password')
+    errors = apiRegister.validate_user(username, password)
+    if errors:
+        return jsonify({ "success": False, "errors": errors }), 400
 
-    return jsonify({ "success": True, "message": "thanks" }), 200
+    # Insert user into DB, etc
+    apiRegister.handle_register(data)
+
+    return jsonify({ "success": True, "message": f"Welcome, {username}!" }), 200
 if __name__ == '__main__':
     app.run()
