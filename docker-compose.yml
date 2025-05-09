@@ -13,6 +13,12 @@ services:
       - "3306:3306"
     volumes:
       - db_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "${DB_USER}", "-p${DB_PASS}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
 
   web:
     build: .
@@ -21,8 +27,8 @@ services:
     env_file:
       - .env
     depends_on:
-      - db
-    # override DB_HOST to point at the Docker network alias
+      db:
+        condition: service_healthy
     environment:
       DB_HOST: db
 
