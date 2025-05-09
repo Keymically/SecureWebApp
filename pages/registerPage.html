@@ -63,27 +63,42 @@
 </div>
 
 <script>
-    document.getElementById('registerForm').addEventListener('submit',async function(event) {
-        event.preventDefault(); // Prevent actual form submission
-        const username = document.getElementById('username').value;
-        const password = document.getElementById('password').value
-        const feedback = document.getElementById('feedback');
-        feedback.innerText = `Registration successful! Welcome, ${username}.`;
-        feedback.style.display = 'block';
+    document.getElementById('registerForm').addEventListener('submit', async function (event) {
+    event.preventDefault();
+    const username = document.getElementById('username').value;
+    const password = document.getElementById('password').value;
+    const feedback = document.getElementById('feedback');
 
-        try{
-            const response = await fetch("/api/register", {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json"
-                },
-                body: JSON.stringify({ username, password })
-            });
+    try {
+        const response = await fetch("/api/register", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({ username, password })
+        });
 
-        } catch (err) {
+        const result = await response.json();
 
+        if (response.ok) {
+            feedback.innerText = result.message;
+            feedback.style.display = 'block';
+            feedback.style.backgroundColor = "#d4edda";
+            feedback.style.color = "#155724";
+        } else {
+            feedback.innerHTML = result.errors.map(e => `<div>${e}</div>`).join("");
+            feedback.style.display = 'block';
+            feedback.style.backgroundColor = "#f8d7da";
+            feedback.style.color = "#721c24";
         }
-    });
+
+    } catch (err) {
+        feedback.innerText = "Something went wrong!";
+        feedback.style.display = 'block';
+        feedback.style.backgroundColor = "#f8d7da";
+        feedback.style.color = "#721c24";
+    }
+});
 </script>
 </body>
 </html>
