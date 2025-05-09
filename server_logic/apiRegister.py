@@ -1,6 +1,7 @@
 import bcrypt
 import hashlib
 import mysql.connector
+from password_strength import PasswordPolicy
 from os import getenv
 
 def get_db_connection():
