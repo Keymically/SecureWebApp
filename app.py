@@ -43,9 +43,11 @@ def login():
     # hashexercise.hash_pass() #when someone tries to login we need to hash the password with his own salt from the DB to check if the password is correct
 
     return send_from_directory(".", path="pages/loginPage.html")
+
 @app.route('/systemScreen')
 def systemScreen():
-    return '<h1>System Screen... whatever that means</h1>'
+    return send_from_directory(".", path="pages/systemScreen.html")
+
 @app.route('/forgotPassword')
 def forgotPassword():
     return '<h1>How did you forget your password we havn\'t even implemented those</h1>'
