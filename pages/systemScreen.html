@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>System Screen</title>
+    <style>
+        body{
+        font-family: Arial, sans-serif;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        height: 100vh;
+        background-color: #D3CCA5;
+        }
+        .containerNewCustomer{
+        background: white;
+        padding: 20px;
+        border-radius: 10px;
+        box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        width: 300px;
+        }
+        input {
+        display: block;
+        width: 90%;
+        padding: 10px;
+        margin: 10px 0;
+        border: 1px solid #ccc;
+        border-radius: 5px;
+        }
+        button {
+        width: 100%;
+        padding: 10px;
+        background: #28a745;
+        color: white;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+        }
+        button:hover {
+        background: #218838;
+        }
+    </style>
+</head>
+
+<body>
+<h1 style="margin-bottom: 10px;">System Screen</h1>
+
+    <form id="registerForm" class="containerNewCustomer">
+    <h3 style="color:#795A2D;">Add a new customer</h3>
+
+    <input type="text" id="firstName" name="firstName" placeholder="First Name" minlength="2" maxlength="20" required>
+    <input type="text" id="lastName" name="lastName" placeholder="Last Name" minlength="2" maxlength="20" required>
+    <input type="tel" id="phone" name="phone" pattern="[0-9]{10}" placeholder="Phone Number" maxlength="10" required>
+    <input type="date" id="bday" name="bday" required>
+    <input type="email" id="email" name="email" placeholder="ogre@gmail.com" required>
+
+    <button type="submit">Register</button>
+</form>
+
+
+</body>
+</html>
