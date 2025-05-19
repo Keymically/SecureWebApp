@@ -47,7 +47,40 @@ def login():
 @app.route('/systemScreen')
 def systemScreen():
     return send_from_directory(".", path="pages/systemScreen.html")
+@app.route('/add_customer', methods=['POST'])
+def add_customer():
+    data = request.get_json()
+    first_name = data.get('firstName')
+    last_name = data.get('lastName')
+    phone = data.get('phone')
+    bday = data.get('bday')
+    email = data.get('email')
 
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    try:
+        cursor.execute('''
+            INSERT INTO customers (first_name, last_name, phone_number, birth_date, email)
+            VALUES (%s, %s, %s, %s, %s)
+        ''', (first_name, last_name, phone, bday, email))
+        conn.commit()
+        return jsonify({'message': 'Customer added successfully'}), 201
+    except mysql.connector.Error as err:
+        print('DB Error:', err)
+        return jsonify({'error': str(err)}), 500
+    finally:
+        cursor.close()
+        conn.close()
+
+@app.route('/api/customers')
+def get_customers():
+    conn = get_db_connection()
+    cursor = conn.cursor(dictionary=True)
+    cursor.execute('SELECT * FROM customers')
+    customers = cursor.fetchall()
+    cursor.close()
+    conn.close()
+    return jsonify(customers)
 @app.route('/forgotPassword')
 def forgotPassword():
     return '<h1>How did you forget your password we havn\'t even implemented those</h1>'

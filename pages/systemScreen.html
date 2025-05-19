@@ -1,64 +1,147 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>System Screen</title>
-    <style>
-        body{
-        font-family: Arial, sans-serif;
-        display: flex;
-        flex-direction: column;
-        justify-content: center;
-        align-items: center;
-        height: 100vh;
-        background-color: #D3CCA5;
-        }
-        .containerNewCustomer{
-        background: white;
-        padding: 20px;
-        border-radius: 10px;
-        box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-        width: 300px;
-        }
-        input {
-        display: block;
-        width: 90%;
-        padding: 10px;
-        margin: 10px 0;
-        border: 1px solid #ccc;
-        border-radius: 5px;
-        }
-        button {
-        width: 100%;
-        padding: 10px;
-        background: #28a745;
-        color: white;
-        border: none;
-        border-radius: 5px;
-        cursor: pointer;
-        }
-        button:hover {
-        background: #218838;
-        }
-    </style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>System Screen</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      background-color: #D3CCA5;
+    }
+    .containerNewCustomer {
+      background: white;
+      padding: 20px;
+      border-radius: 10px;
+      box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+      width: 300px;
+    }
+    input {
+      display: block;
+      width: 90%;
+      padding: 10px;
+      margin: 10px 0;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+    }
+    button {
+      width: 100%;
+      padding: 10px;
+      background: #28a745;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+    button:hover {
+      background: #218838;
+    }
+    table {
+      border-collapse: collapse;
+      width: 80%;
+      background: white;
+      margin-top: 20px;
+    }
+    th, td {
+      border: 1px solid #aaa;
+      padding: 8px 12px;
+      text-align: left;
+    }
+    th {
+      background-color: #f2f2f2;
+    }
+  </style>
 </head>
 
 <body>
-<h1 style="margin-bottom: 10px;">System Screen</h1>
+  <h1 style="margin-bottom: 10px;">System Screen</h1>
 
-    <form id="registerForm" class="containerNewCustomer">
+  <form id="registerForm" class="containerNewCustomer">
     <h3 style="color:#795A2D;">Add a new customer</h3>
-
     <input type="text" id="firstName" name="firstName" placeholder="First Name" minlength="2" maxlength="20" required>
     <input type="text" id="lastName" name="lastName" placeholder="Last Name" minlength="2" maxlength="20" required>
     <input type="tel" id="phone" name="phone" pattern="[0-9]{10}" placeholder="Phone Number" maxlength="10" required>
     <input type="date" id="bday" name="bday" required>
     <input type="email" id="email" name="email" placeholder="ogre@gmail.com" required>
-
     <button type="submit">Register</button>
-</form>
+  </form>
 
+  <h2 style="margin-top: 30px; color:#4A3F2A;">Customer List</h2>
+  <table id="customerTable">
+    <thead>
+      <tr>
+        <th>First Name</th>
+        <th>Last Name</th>
+        <th>Phone</th>
+        <th>Birthdate</th>
+        <th>Email</th>
+      </tr>
+    </thead>
+    <tbody>
+      <!-- rows will load here -->
+    </tbody>
+  </table>
+<script>
+  document.getElementById("registerForm").addEventListener("submit", function (e) {
+    e.preventDefault();
+    debugger;
+    const data = {
+      firstName: document.getElementById("firstName").value,
+      lastName: document.getElementById("lastName").value,
+      phone: document.getElementById("phone").value,
+      bday: document.getElementById("bday").value,
+      email: document.getElementById("email").value,
+    };
 
+    fetch("/add_customer", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(data),
+    })
+      .then((res) => res.json())
+      .then((res) => {
+        if (res.message) {
+          alert("Customer added!");
+          document.getElementById("registerForm").reset();
+        } else {
+          alert("Error: " + res.error);
+        }
+      })
+      .catch((err) => {
+        console.error("Request failed", err);
+        alert("An error occurred.");
+      });
+  });
+    </script>
+  <script>
+    window.onload = function () {
+      fetch('/api/customers')  // Change this URL if needed
+        .then(response => response.json())
+        .then(data => {
+          const tbody = document.querySelector('#customerTable tbody');
+          data.forEach(customer => {
+            const row = document.createElement('tr');
+            row.innerHTML = `
+              <td>${customer.first_name}</td>
+              <td>${customer.last_name}</td>
+              <td>${customer.phone_number}</td>
+              <td>${customer.birth_date}</td>
+              <td>${customer.email}</td>
+            `;
+            tbody.appendChild(row);
+          });
+        })
+        .catch(err => {
+          console.error('Error loading customer data:', err);
+        });
+    };
+  </script>
 </body>
 </html>
