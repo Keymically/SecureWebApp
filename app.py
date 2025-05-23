@@ -10,6 +10,7 @@ import smtplib
 import random
 import string
 from server_logic import apiRegister
+from server_logic import login as APIlogin
 
 #test
 load_dotenv()
@@ -36,6 +37,15 @@ def click():
     cursor.close()
     conn.close()
     return jsonify(results)
+@app.route('/click2')
+def click2():
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute("SELECT * FROM salts")
+    results = cursor.fetchall()
+    cursor.close()
+    conn.close()
+    return jsonify(results)
 @app.route('/register')
 def register():
     #hashexercise.hash_pass() #when user is registering we will hash with salt and store the hashed result in the DB
@@ -45,8 +55,6 @@ def changePassword():
     return send_from_directory(".", path="pages/changePassword.html")
 @app.route('/login')
 def login():
-    # hashexercise.hash_pass() #when someone tries to login we need to hash the password with his own salt from the DB to check if the password is correct
-
     return send_from_directory(".", path="pages/loginPage.html")
 
 @app.route('/systemScreen')
@@ -169,22 +177,28 @@ def reset_password():
 
     return jsonify({'message': 'Password updated successfully'}), 200
 @app.route('/api/login', methods=['POST'])
-def apilogin():
-    data = request.get_json()  # parse JSON body
+def api_login():
+    data = request.get_json()
+    if not data:
+        return jsonify({'error': 'Missing JSON payload'}), 400
 
-    username = data.get('username')
+    email = data.get('username')
     password = data.get('password')
-    print(username + " " + password)
+    if not email or not password:
+        return jsonify({'error': 'Email and password are required'}), 400
 
-    if username == "admin" and password == "1234":
-        return jsonify({ "success": True, "message": "Logged in!" }), 200
-    else:
-        return f"<h3> {username} is here!!</h3>"
-        # return jsonify({ "success": False, "message": "Invalid credentials" }), 401
+    credentials = APIlogin.get_credentials_by_email(email)
+    if not credentials:
+        return jsonify({'error': 'Invalid email or password'}), 401
 
+    stored_hash, stored_salt = credentials
+    if not APIlogin.verify_pass_with_hmac(password, stored_salt, stored_hash):
+        return jsonify({'error': 'Invalid email or password'}), 401
+
+    return jsonify({'message': 'Login successful'}), 200
 
 @app.route('/api/register', methods=['POST'])
-def apiregister():
+def api_register():
     data = request.get_json()
     username = data.get('username')
     password = data.get('password')
@@ -194,9 +208,8 @@ def apiregister():
     if errors:
         return jsonify({"success": False, "errors": errors}), 400
 
-    # Insert user into DB with email
     apiRegister.handle_register(data)
 
     return jsonify({"success": True, "message": f"Welcome, {username}!"}), 200
 if __name__ == '__main__':
-    app.run()
+    app.run(debug=True, use_reloader=False)

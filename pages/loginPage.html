@@ -73,21 +73,6 @@
     if (response.ok) {
       const data = await response.text();
       document.getElementById("responseContainer").innerHTML = data;
-     /* const container = document.getElementById("responseContainer");
-      const scripts = container.querySelectorAll("script");
-        scripts.forEach(oldScript => {
-            const newScript = document.createElement("script");
-            if (oldScript.src) {
-                newScript.src = oldScript.src;
-            } else {
-                newScript.textContent = oldScript.textContent;
-            }
-            document.body.appendChild(newScript);
-        });
-       */
-      //const match = data.match(/<script>([\s\S]*?)<\/script>/);
-      //  if (match) eval(match[1]);
-      // redirect or update UI here
     } else {
       const error = await response.json();
       console.error("Login failed:", error);
