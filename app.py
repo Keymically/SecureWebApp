@@ -3,7 +3,12 @@ from flask import Flask, render_template, send_from_directory, request, jsonify
 import mysql.connector
 from os import getenv
 from dotenv import load_dotenv
-
+import bcrypt
+import hashlib
+from email.mime.text import MIMEText
+import smtplib
+import random
+import string
 from server_logic import apiRegister
 
 #test
@@ -43,13 +48,126 @@ def login():
     # hashexercise.hash_pass() #when someone tries to login we need to hash the password with his own salt from the DB to check if the password is correct
 
     return send_from_directory(".", path="pages/loginPage.html")
+
 @app.route('/systemScreen')
 def systemScreen():
-    return '<h1>System Screen... whatever that means</h1>'
+    return send_from_directory(".", path="pages/systemScreen.html")
+@app.route('/add_customer', methods=['POST'])
+def add_customer():
+    data = request.get_json()
+    first_name = data.get('firstName')
+    last_name = data.get('lastName')
+    phone = data.get('phone')
+    bday = data.get('bday')
+    email = data.get('email')
+
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    try:
+        cursor.execute('''
+            INSERT INTO customers (first_name, last_name, phone_number, birth_date, email)
+            VALUES (%s, %s, %s, %s, %s)
+        ''', (first_name, last_name, phone, bday, email))
+        conn.commit()
+        return jsonify({'message': 'Customer added successfully'}), 201
+    except mysql.connector.Error as err:
+        print('DB Error:', err)
+        return jsonify({'error': str(err)}), 500
+    finally:
+        cursor.close()
+        conn.close()
+
+@app.route('/api/customers')
+def get_customers():
+    conn = get_db_connection()
+    cursor = conn.cursor(dictionary=True)
+    cursor.execute('SELECT * FROM customers')
+    customers = cursor.fetchall()
+    cursor.close()
+    conn.close()
+    return jsonify(customers)
 @app.route('/forgotPassword')
 def forgotPassword():
-    return '<h1>How did you forget your password we havn\'t even implemented those</h1>'
+    return send_from_directory(".", path="pages/forgot_password.html")
 
+def send_email(to_email, token):
+    msg = MIMEText(f'Your reset token is: {token}')
+    msg['Subject'] = 'Password Reset'
+    msg['From'] = 'your_email@gmail.com'
+    msg['To'] = to_email
+
+    with smtplib.SMTP('sandbox.smtp.mailtrap.io', 587) as smtp:
+        smtp.starttls()
+        smtp.login('8637650889cca2', 'b5e3fa51a408a8')
+        smtp.send_message(msg)
+
+@app.route('/forgot-password', methods=['POST'])
+def forgot_password():
+    username = request.json.get('username')
+
+    conn = get_db_connection()
+    cursor = conn.cursor(dictionary=True)
+    cursor.execute('SELECT * FROM users WHERE email = %s', (username,))
+    user = cursor.fetchone()
+
+    if not user:
+        return jsonify({'error': 'User not found'}), 404
+
+
+    raw_token = ''.join(random.choices(string.ascii_letters + string.digits, k=32))
+    token = hashlib.sha1(raw_token.encode()).hexdigest()
+
+    cursor.execute('UPDATE users SET reset_token = %s, token_created_at = NOW() WHERE ID = %s',
+                   (token, user['ID']))
+    conn.commit()
+    cursor.close()
+    conn.close()
+
+    # Send token to email (simulate or actually send)
+    send_email(username, token)  # assuming username is the email
+
+    return jsonify({'message': 'Reset token sent to your email'}), 200
+
+@app.route('/verify-token', methods=['POST'])
+def verify_token():
+    username = request.json.get('username')
+    token = request.json.get('token')
+
+    conn = get_db_connection()
+    cursor = conn.cursor(dictionary=True)
+    cursor.execute('SELECT * FROM users WHERE email = %s AND reset_token = %s', (username, token))
+    user = cursor.fetchone()
+    cursor.close()
+    conn.close()
+
+    if user:
+        return jsonify({'message': 'Token valid. Proceed to reset password'}), 200
+    else:
+        return jsonify({'error': 'Invalid token'}), 400
+
+@app.route('/reset-password', methods=['POST'])
+def reset_password():
+    username = request.json.get('username')
+    token = request.json.get('token')
+    new_password = request.json.get('newPassword')
+
+    conn = get_db_connection()
+    cursor = conn.cursor()
+
+    cursor.execute('SELECT * FROM users WHERE email = %s AND reset_token = %s', (username, token))
+    user = cursor.fetchone()
+    if not user:
+        return jsonify({'error': 'Invalid token'}), 400
+
+    hashed_pw = bcrypt.hashpw(new_password.encode(), bcrypt.gensalt()).decode()
+
+    cursor.execute('UPDATE users SET hashed_password = %s, reset_token = NULL, token_created_at = NULL WHERE email = %s',
+                   (hashed_pw, username))
+    conn.commit()
+    cursor.close()
+    conn.close()
+
+    return jsonify({'message': 'Password updated successfully'}), 200
 @app.route('/api/login', methods=['POST'])
 def apilogin():
     data = request.get_json()  # parse JSON body
@@ -70,13 +188,15 @@ def apiregister():
     data = request.get_json()
     username = data.get('username')
     password = data.get('password')
-    errors = apiRegister.validate_user(username, password)
-    if errors:
-        return jsonify({ "success": False, "errors": errors }), 400
+    email = data.get('email')
 
-    # Insert user into DB, etc
+    errors = apiRegister.validate_user(username, password, email)
+    if errors:
+        return jsonify({"success": False, "errors": errors}), 400
+
+    # Insert user into DB with email
     apiRegister.handle_register(data)
 
-    return jsonify({ "success": True, "message": f"Welcome, {username}!" }), 200
+    return jsonify({"success": True, "message": f"Welcome, {username}!"}), 200
 if __name__ == '__main__':
     app.run()

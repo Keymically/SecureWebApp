@@ -12,40 +12,34 @@ def get_db_connection():
         database=getenv('DB_DBNAME'),
         use_pure=True
     )
-def save_userDB(username,password,salt):
+def save_userDB(username, email, password, salt):
     conn = get_db_connection()
     cursor = conn.cursor()
-    insert_user = "INSERT INTO users (username, hashed_password) VALUES (%s, %s)"
-    cursor.execute(insert_user, (username, password))
+    insert_user = "INSERT INTO users (username, email, hashed_password) VALUES (%s, %s, %s)"
+    cursor.execute(insert_user, (username, email, password))
     user_id = cursor.lastrowid
     insert_salt = "INSERT INTO salts (ID, salt) VALUES (%s, %s)"
     cursor.execute(insert_salt, (user_id, salt))
     conn.commit()
-    #close connection
     cursor.close()
     conn.close()
 
 def hash_pass(password):
     password_bytes = password.encode()
     salt = bcrypt.gensalt()
-    #print(f"the salt is {salt}")
     hashed = bcrypt.hashpw(password_bytes,salt)
-    #print(f"the hashed password is {hashed}")
     return salt.decode(), hashed.decode()
 
-def validate_user(username, password):
+def validate_user(username, password, email):
     errors = []
 
     conn = get_db_connection()
     cursor = conn.cursor()
-    cursor.execute("SELECT * FROM users WHERE username = %s", (username,))
-    result = cursor.fetchone()
+    cursor.execute("SELECT * FROM users WHERE email = %s", (email,))
+    if cursor.fetchone():
+        errors.append("Email already registered.")
     cursor.close()
     conn.close()
-
-    if result:
-        errors.append("Username already exists.")
-
     password_policy, _ = get_password_policy()
     rules_messages = get_config_rules_messages()
     failed_rules = password_policy.test(password)
@@ -57,10 +51,13 @@ def validate_user(username, password):
 
     return errors
 
+
 def handle_register(data):
     try:
         username = data['username']
-        salt, password = hash_pass(data['password'])
-        save_userDB(username,password,salt)
-    except:
+        email = data['email']
+        salt, hashed_password = hash_pass(data['password'])
+        save_userDB(username, email, hashed_password, salt)
+    except Exception as e:
+        print("Error in handle_register:", e)
         print(data)
