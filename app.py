@@ -1,5 +1,5 @@
 import os
-from flask import Flask, render_template, send_from_directory, request, jsonify
+from flask import Flask, render_template, send_from_directory, request, jsonify, session, redirect, url_for
 import mysql.connector
 from os import getenv
 from dotenv import load_dotenv
@@ -12,9 +12,12 @@ import string
 from server_logic import apiRegister
 from server_logic import login as APIlogin
 
+
 #test
 load_dotenv()
 app = Flask(__name__)
+app.secret_key = os.getenv('HMAC_SECRET_KEY')
+
 def get_db_connection():
     return mysql.connector.connect(
         host=getenv('DB_HOST'),
@@ -52,11 +55,77 @@ def register():
     return send_from_directory(".", path="pages/registerPage.html")
 @app.route('/changePassword')
 def changePassword():
-    return send_from_directory(".", path="pages/changePassword.html")
+    if 'email' in session and 'password' in session:
+        return send_from_directory(".", path="pages/changePassword.html")
+    else:
+        return send_from_directory(".", path="pages/loginPage.html")
+
+@app.route('/api/get_user_info')
+def get_user_info():
+    if 'email' in session:
+        return jsonify({'email': session['email']})
+    else:
+        return jsonify({'error': 'unauthorized'}), 401
+
+
+@app.route('/api/change_password', methods=['POST'])
+def change_password():
+    if 'email' not in session:
+        return jsonify({'error': 'session not instantiated'}), 401
+
+    data = request.get_json()
+    if not data:
+        return jsonify({'error': 'missing JSON body'}), 400
+
+    current_password = data.get('currentPassword')
+    new_password = data.get('newPassword')
+
+    if not current_password or not new_password:
+        return jsonify({'error': 'missing required fields'}), 400
+
+    email = session['email']
+    credentials = APIlogin.get_credentials_by_email(email)
+    if not credentials:
+        return jsonify({'error': 'user not found'}), 404
+
+    stored_hash, stored_salt = credentials
+    if not APIlogin.verify_pass_with_hmac(current_password, stored_salt, stored_hash):
+        return jsonify({'error': 'current password is not correct'}), 401
+
+    success_response = update_user_password(email, new_password)
+    if 'error' in success_response:
+        return jsonify(success_response), success_response.get('status', 500)
+
+    return jsonify(success_response)
+
 @app.route('/login')
 def login():
     return send_from_directory(".", path="pages/loginPage.html")
 
+
+def update_user_password(email, new_password):
+    new_salt, new_hashed_password = apiRegister.hash_pass_with_hmac(new_password)
+    try:
+        conn = get_db_connection()
+        with conn:
+            with conn.cursor() as cursor:
+                cursor.execute("SELECT id FROM users WHERE email = %s", (email,))
+                result = cursor.fetchone()
+                if not result:
+                    return {'error': 'User not found', 'status': 404}
+
+                user_id = result[0]
+                cursor.execute(
+                    "UPDATE users SET hashed_password = %s WHERE id = %s",
+                    (new_hashed_password, user_id)
+                )
+                cursor.execute(
+                    "UPDATE salts SET salt = %s WHERE id = %s",
+                    (new_salt, user_id)
+                )
+        return {'message': 'Password updated successfully'}
+    except Exception as e:
+        return {'error': f'Failed to update password: {str(e)}', 'status': 500}
 @app.route('/systemScreen')
 def systemScreen():
     return send_from_directory(".", path="pages/systemScreen.html")
@@ -195,7 +264,10 @@ def api_login():
     if not APIlogin.verify_pass_with_hmac(password, stored_salt, stored_hash):
         return jsonify({'error': 'Invalid email or password'}), 401
 
+    session['email'] = email
+    session['password'] = password
     return jsonify({'message': 'Login successful'}), 200
+
 
 @app.route('/api/register', methods=['POST'])
 def api_register():
