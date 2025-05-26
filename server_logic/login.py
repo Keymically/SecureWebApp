@@ -6,6 +6,7 @@ import hmac
 import hashlib
 import base64
 from dotenv import load_dotenv
+import warnings
 
 load_dotenv()
 HMAC_SECRET_KEY = getenv('HMAC_SECRET_KEY')
@@ -47,7 +48,7 @@ def verify_pass_with_hmac(password, salt_b64, hmac_b64):
         return hmac.compare_digest(computed_hmac, stored_hmac)
 
     except (base64.binascii.Error, ValueError) as e:
-        print(f"[verify_pass_with_hmac] Decoding error: {e}")
+        warnings.warn(f"[verify_pass_with_hmac] Decoding error: {e}")
         return False
 
 def get_credentials_by_email(email):
@@ -60,7 +61,7 @@ def get_credentials_by_email(email):
         JOIN salts s ON u.id = s.id
         WHERE u.email = %s
     """
-    cursor.execute(query, (email,))
+    cursor.execute(query, (email.strip().lower(),))
     result = cursor.fetchone()
 
     cursor.close()

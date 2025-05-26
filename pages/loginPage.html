@@ -71,8 +71,8 @@
     });
 
     if (response.ok) {
-      const data = await response.text();
-      document.getElementById("responseContainer").innerHTML = data;
+      const data = await response.json();
+      document.getElementById("responseContainer").textContent = data.message;
     } else {
       const error = await response.json();
       console.error("Login failed:", error);
