@@ -130,7 +130,7 @@
                     const row = document.createElement('tr');
                     ["first_name", "last_name", "phone_number", "birth_date", "email"].forEach(key => {
                         const td = document.createElement('td');
-                        td.innerHTML = escapeHTML(customer[key]);
+                        td.innerHTML = customer[key];
                         row.appendChild(td);
                     });
                     tbody.appendChild(row);
