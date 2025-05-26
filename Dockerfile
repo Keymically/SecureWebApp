@@ -23,6 +23,7 @@ EXPOSE 5000
 # 8. Set Flask environment variables
 ENV FLASK_APP=app.py
 ENV FLASK_RUN_HOST=0.0.0.0
+ENV PYTHONUNBUFFERED=1
 
 # 9. Run Flask only after MySQL is reachable
 CMD ["./wait-for-mysql.sh"]
