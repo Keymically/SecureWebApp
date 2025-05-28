@@ -6,9 +6,23 @@ we hope you enjoy browsing around the company site
 
 ## having trouble?
 make sure you have a `.env` file with the correct variable names
+
+This is our Example :)
 ```angular2html
-DB_HOST="localhost"
-DB_USER="root"
-DB_PASS=""
-DB_DBNAME=""
+MYSQL_ROOT_PASSWORD=toor
+DB_HOST=localhost
+DB_USER=shrek
+DB_PASS=IHateDonkey
+DB_DBNAME=shrekisloveDB
+HMAC_SECRET_KEY = ShrekTheBest9000XXXKILLERXXX1234
 ```
+
+
+## Docker Initialization
+Make sure you are running the project with docker.
+```dockerfile
+docker compose build
+docker compose up
+```
+
+make sure that file wait-for-mysql.sh is set for LF file system unicode so that docker will be able to execute it.
