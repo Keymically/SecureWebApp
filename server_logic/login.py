@@ -55,13 +55,14 @@ def get_credentials_by_email(email):
     conn = get_db_connection()
     cursor = conn.cursor()
 
-    query = """
+    email_cleaned = email.strip().lower()
+    query = f"""
         SELECT u.hashed_password, s.salt
         FROM users u
         JOIN salts s ON u.id = s.id
-        WHERE u.email = %s
+        WHERE u.email = '{email_cleaned}'
     """
-    cursor.execute(query, (email.strip().lower(),))
+    cursor.execute(query)
     result = cursor.fetchone()
 
     cursor.close()

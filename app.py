@@ -246,30 +246,35 @@ def reset_password():
     return jsonify({'message': 'Password updated successfully'}), 200
 @app.route('/api/login', methods=['POST'])
 def api_login():
-    data = request.get_json()
-    if not data:
-        return jsonify({'error': 'Missing JSON payload'}), 400
+    try:
+        data = request.get_json()
+        if not data:
+            return jsonify({'error': 'Missing JSON payload'}), 400
 
-    email = data.get('username')
-    password = data.get('password')
-    if not email or not password:
-        return jsonify({'error': 'Email and password are required'}), 400
+        email = data.get('username')
+        password = data.get('password')
+        if not email or not password:
+            return jsonify({'error': 'Email and password are required'}), 400
 
-    credentials = APIlogin.get_credentials_by_email(email)
-    if not credentials:
-        return jsonify({'error': 'Invalid email or password'}), 401
+        credentials = APIlogin.get_credentials_by_email(email)
+        if not credentials:
+            return jsonify({'error': 'Invalid email or password'}), 401
 
-    stored_hash, stored_salt = credentials
-    if not APIlogin.verify_pass_with_hmac(password, stored_salt, stored_hash):
-        return jsonify({'error': 'Invalid email or password'}), 401
+        stored_hash, stored_salt = credentials
+        if not APIlogin.verify_pass_with_hmac(password, stored_salt, stored_hash):
+            return jsonify({'error': 'Invalid email or password'}), 401
 
-    session['email'] = email
-    session['password'] = password
-    return jsonify({'message': 'Login successful'}), 200
+        session['email'] = email
+        session['password'] = password
+        return jsonify({'message': 'Login successful'}), 200
+    except Exception as err:
+        return jsonify({'error': str(err)}), 500
+
 
 
 @app.route('/api/register', methods=['POST'])
 def api_register():
+
     data = request.get_json()
     username = data.get('username')
     password = data.get('password')

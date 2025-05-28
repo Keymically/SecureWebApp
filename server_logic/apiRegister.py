@@ -29,18 +29,17 @@ def save_userDB(username, email, hashed_password, salt):
     cursor = conn.cursor()
 
     try:
-        insert_user = """
+        insert_user = f"""
             INSERT INTO users (username, email, hashed_password)
-            VALUES (%s, %s, %s)
+            VALUES ('{username}', '{email}', '{hashed_password}')
         """
-        cursor.execute(insert_user, (username, email, hashed_password))
+        cursor.execute(insert_user)
         user_id = cursor.lastrowid
-
-        insert_salt = """
+        insert_salt = f"""
             INSERT INTO salts (ID, salt)
-            VALUES (%s, %s)
+            VALUES ({user_id}, '{salt}')
         """
-        cursor.execute(insert_salt, (user_id, salt))
+        cursor.execute(insert_salt)
 
         conn.commit()
     except Exception as e:
