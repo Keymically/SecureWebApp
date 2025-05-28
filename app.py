@@ -141,10 +141,9 @@ def add_customer():
     conn = get_db_connection()
     cursor = conn.cursor()
     try:
-        cursor.execute('''
-            INSERT INTO customers (first_name, last_name, phone_number, birth_date, email)
-            VALUES (%s, %s, %s, %s, %s)
-        ''', (first_name, last_name, phone, bday, email))
+        query = f""" INSERT INTO customers (first_name, last_name, phone_number, birth_date, email)
+                VALUES ('{first_name}', '{last_name}', '{phone}', '{bday}', '{email}')"""
+        cursor.execute(query)
         conn.commit()
         return jsonify({'message': 'Customer added successfully'}), 201
     except mysql.connector.Error as err:
