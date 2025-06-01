@@ -11,6 +11,7 @@ import random
 import string
 from server_logic import apiRegister
 from server_logic import login as APIlogin
+from server_logic.utils import *
 
 
 #test
@@ -82,6 +83,20 @@ def change_password():
 
     if not current_password or not new_password:
         return jsonify({'error': 'missing required fields'}), 400
+
+    errors = []
+
+    password_policy, _ = get_password_policy()
+    rules_messages = get_config_rules_messages()
+    failed_rules = password_policy.test(new_password)
+
+    for issue in failed_rules:
+        name, number = str(issue).split("(")
+        number = number.replace(")", "")
+        errors.append(f"Password must have at least {number} {rules_messages[name]}")
+
+    if len(errors) > 0:
+        return jsonify({'errors': errors}), 400
 
     email = session['email']
     credentials = APIlogin.get_credentials_by_email(email)
@@ -235,15 +250,30 @@ def reset_password():
     user = cursor.fetchone()
     if not user:
         return jsonify({'error': 'Invalid token'}), 400
+    user_id = user[0]
 
-    hashed_pw = bcrypt.hashpw(new_password.encode(), bcrypt.gensalt()).decode()
+    errors = []
+
+    password_policy, _ = get_password_policy()
+    rules_messages = get_config_rules_messages()
+    failed_rules = password_policy.test(new_password)
+
+    for issue in failed_rules:
+        name, number = str(issue).split("(")
+        number = number.replace(")", "")
+        errors.append(f"Password must have at least {number} {rules_messages[name]}")
+
+    if len(errors) > 0:
+        return jsonify({'errors': errors}), 400
+    salt, hashed_password = apiRegister.hash_pass_with_hmac(new_password)
 
     cursor.execute('UPDATE users SET hashed_password = %s, reset_token = NULL, token_created_at = NULL WHERE email = %s',
-                   (hashed_pw, username))
+                   (hashed_password, username))
+
+    cursor.execute('UPDATE salts set salt = %s where id = %s', (salt, user_id))
     conn.commit()
     cursor.close()
     conn.close()
-
     return jsonify({'message': 'Password updated successfully'}), 200
 @app.route('/api/login', methods=['POST'])
 def api_login():
