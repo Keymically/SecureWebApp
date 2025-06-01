@@ -7,4 +7,4 @@ while ! nc -z "$DB_HOST" 3306; do
 done
 
 echo "✅ MySQL is up. Starting Flask..."
-exec flask run --host=0.0.0.0 --port=5000
+exec flask run --host=0.0.0.0 --port=5000 --no-reload

@@ -2,7 +2,20 @@ import bcrypt
 import mysql.connector
 from password_strength import PasswordPolicy
 from os import getenv
+import hmac
+import hashlib
+import base64
 from server_logic.utils import *
+from dotenv import load_dotenv
+import warnings
+
+load_dotenv()
+HMAC_SECRET_KEY = getenv('HMAC_SECRET_KEY')
+if HMAC_SECRET_KEY is None:
+    raise ValueError("HMAC_SECRET_KEY is not set in environment variables.")
+
+HMAC_SECRET_KEY = HMAC_SECRET_KEY.encode()
+
 
 def get_db_connection():
     return mysql.connector.connect(
@@ -12,23 +25,41 @@ def get_db_connection():
         database=getenv('DB_DBNAME'),
         use_pure=True
     )
-def save_userDB(username, email, password, salt):
+def save_userDB(username, email, hashed_password, salt):
     conn = get_db_connection()
     cursor = conn.cursor()
-    insert_user = "INSERT INTO users (username, email, hashed_password) VALUES (%s, %s, %s)"
-    cursor.execute(insert_user, (username, email, password))
-    user_id = cursor.lastrowid
-    insert_salt = "INSERT INTO salts (ID, salt) VALUES (%s, %s)"
-    cursor.execute(insert_salt, (user_id, salt))
-    conn.commit()
-    cursor.close()
-    conn.close()
 
-def hash_pass(password):
-    password_bytes = password.encode()
+    try:
+        insert_user = """
+            INSERT INTO users (username, email, hashed_password)
+            VALUES (%s, %s, %s)
+        """
+        cursor.execute(insert_user, (username, email, hashed_password))
+        user_id = cursor.lastrowid
+
+        insert_salt = """
+            INSERT INTO salts (ID, salt)
+            VALUES (%s, %s)
+        """
+        cursor.execute(insert_salt, (user_id, salt))
+
+        conn.commit()
+    except Exception as e:
+        conn.rollback()
+        raise e
+    finally:
+        cursor.close()
+        conn.close()
+
+
+def hash_pass_with_hmac(password):
     salt = bcrypt.gensalt()
-    hashed = bcrypt.hashpw(password_bytes,salt)
-    return salt.decode(), hashed.decode()
+    password_bytes = password.encode()
+
+    hmac_hash = hmac.new(HMAC_SECRET_KEY, password_bytes + salt, hashlib.sha256).digest()
+
+    return base64.b64encode(salt).decode(), base64.b64encode(hmac_hash).decode()
+
 
 def validate_user(username, password, email):
     errors = []
@@ -54,10 +85,12 @@ def validate_user(username, password, email):
 
 def handle_register(data):
     try:
-        username = data['username']
-        email = data['email']
-        salt, hashed_password = hash_pass(data['password'])
+        username = data['username'].strip()
+        email = data['email'].strip().lower()
+        password = data['password'].strip()
+        salt, hashed_password = hash_pass_with_hmac(password)
         save_userDB(username, email, hashed_password, salt)
     except Exception as e:
-        print("Error in handle_register:", e)
-        print(data)
+        warnings.warn(f"[handle_register] Exception: {str(e)}")
+        print("[handle_register] Data Keys Received:", list(data.keys()))
+        raise

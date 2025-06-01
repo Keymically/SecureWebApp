@@ -88,7 +88,11 @@
                 feedback.style.backgroundColor = "#d4edda";
                 feedback.style.color = "#155724";
             } else {
-                feedback.innerHTML = result.errors.map(e => `<div>${e}</div>`).join("");
+                feedback.innerHTML = result.errors.map(e => {
+                    const div = document.createElement("div");
+                    div.textContent = e;
+                    return div.outerHTML;
+                }).join("");
                 feedback.style.display = 'block';
                 feedback.style.backgroundColor = "#f8d7da";
                 feedback.style.color = "#721c24";

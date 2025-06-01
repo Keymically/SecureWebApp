@@ -5,3 +5,4 @@ DB_HOST=config-this
 DB_USER=config-this
 DB_PASS=config-this
 DB_DBNAME=config-this
+HMAC_SECRET_KEY=config-this

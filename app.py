@@ -1,5 +1,5 @@
 import os
-from flask import Flask, render_template, send_from_directory, request, jsonify
+from flask import Flask, render_template, send_from_directory, request, jsonify, session, redirect, url_for
 import mysql.connector
 from os import getenv
 from dotenv import load_dotenv
@@ -10,10 +10,17 @@ import smtplib
 import random
 import string
 from server_logic import apiRegister
+from server_logic import login as APIlogin
+import bleach
+
+def sanitize(input_str):
+    return bleach.clean(input_str, tags=[], attributes={}, strip=True)
 
 #test
 load_dotenv()
 app = Flask(__name__)
+app.secret_key = os.getenv('HMAC_SECRET_KEY')
+
 def get_db_connection():
     return mysql.connector.connect(
         host=getenv('DB_HOST'),
@@ -36,30 +43,103 @@ def click():
     cursor.close()
     conn.close()
     return jsonify(results)
+@app.route('/click2')
+def click2():
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute("SELECT * FROM salts")
+    results = cursor.fetchall()
+    cursor.close()
+    conn.close()
+    return jsonify(results)
 @app.route('/register')
 def register():
     #hashexercise.hash_pass() #when user is registering we will hash with salt and store the hashed result in the DB
     return send_from_directory(".", path="pages/registerPage.html")
 @app.route('/changePassword')
 def changePassword():
-    return send_from_directory(".", path="pages/changePassword.html")
+    if 'email' in session and 'password' in session:
+        return send_from_directory(".", path="pages/changePassword.html")
+    else:
+        return send_from_directory(".", path="pages/loginPage.html")
+
+@app.route('/api/get_user_info')
+def get_user_info():
+    if 'email' in session:
+        return jsonify({'email': session['email']})
+    else:
+        return jsonify({'error': 'unauthorized'}), 401
+
+
+@app.route('/api/change_password', methods=['POST'])
+def change_password():
+    if 'email' not in session:
+        return jsonify({'error': 'session not instantiated'}), 401
+
+    data = request.get_json()
+    if not data:
+        return jsonify({'error': 'missing JSON body'}), 400
+
+    current_password = data.get('currentPassword')
+    new_password = data.get('newPassword')
+
+    if not current_password or not new_password:
+        return jsonify({'error': 'missing required fields'}), 400
+
+    email = session['email']
+    credentials = APIlogin.get_credentials_by_email(email)
+    if not credentials:
+        return jsonify({'error': 'user not found'}), 404
+
+    stored_hash, stored_salt = credentials
+    if not APIlogin.verify_pass_with_hmac(current_password, stored_salt, stored_hash):
+        return jsonify({'error': 'current password is not correct'}), 401
+
+    success_response = update_user_password(email, new_password)
+    if 'error' in success_response:
+        return jsonify(success_response), success_response.get('status', 500)
+
+    return jsonify(success_response)
+
 @app.route('/login')
 def login():
-    # hashexercise.hash_pass() #when someone tries to login we need to hash the password with his own salt from the DB to check if the password is correct
-
     return send_from_directory(".", path="pages/loginPage.html")
 
+
+def update_user_password(email, new_password):
+    new_salt, new_hashed_password = apiRegister.hash_pass_with_hmac(new_password)
+    try:
+        conn = get_db_connection()
+        with conn:
+            with conn.cursor() as cursor:
+                cursor.execute("SELECT id FROM users WHERE email = %s", (email,))
+                result = cursor.fetchone()
+                if not result:
+                    return {'error': 'User not found', 'status': 404}
+
+                user_id = result[0]
+                cursor.execute(
+                    "UPDATE users SET hashed_password = %s WHERE id = %s",
+                    (new_hashed_password, user_id)
+                )
+                cursor.execute(
+                    "UPDATE salts SET salt = %s WHERE id = %s",
+                    (new_salt, user_id)
+                )
+        return {'message': 'Password updated successfully'}
+    except Exception as e:
+        return {'error': f'Failed to update password: {str(e)}', 'status': 500}
 @app.route('/systemScreen')
 def systemScreen():
     return send_from_directory(".", path="pages/systemScreen.html")
 @app.route('/add_customer', methods=['POST'])
 def add_customer():
     data = request.get_json()
-    first_name = data.get('firstName')
-    last_name = data.get('lastName')
-    phone = data.get('phone')
-    bday = data.get('bday')
-    email = data.get('email')
+    first_name = sanitize(data.get('firstName', ''))
+    last_name = sanitize(data.get('lastName', ''))
+    phone = sanitize(data.get('phone', ''))
+    bday = sanitize(data.get('bday', ''))
+    email = sanitize(data.get('email', ''))
 
     conn = get_db_connection()
     cursor = conn.cursor()
@@ -169,22 +249,31 @@ def reset_password():
 
     return jsonify({'message': 'Password updated successfully'}), 200
 @app.route('/api/login', methods=['POST'])
-def apilogin():
-    data = request.get_json()  # parse JSON body
+def api_login():
+    data = request.get_json()
+    if not data:
+        return jsonify({'error': 'Missing JSON payload'}), 400
 
-    username = data.get('username')
+    email = data.get('username')
     password = data.get('password')
-    print(username + " " + password)
+    if not email or not password:
+        return jsonify({'error': 'Email and password are required'}), 400
 
-    if username == "admin" and password == "1234":
-        return jsonify({ "success": True, "message": "Logged in!" }), 200
-    else:
-        return f"<h3> {username} is here!!</h3>"
-        # return jsonify({ "success": False, "message": "Invalid credentials" }), 401
+    credentials = APIlogin.get_credentials_by_email(email)
+    if not credentials:
+        return jsonify({'error': 'Invalid email or password'}), 401
+
+    stored_hash, stored_salt = credentials
+    if not APIlogin.verify_pass_with_hmac(password, stored_salt, stored_hash):
+        return jsonify({'error': 'Invalid email or password'}), 401
+
+    session['email'] = email
+    session['password'] = password
+    return jsonify({'message': 'Login successful'}), 200
 
 
 @app.route('/api/register', methods=['POST'])
-def apiregister():
+def api_register():
     data = request.get_json()
     username = data.get('username')
     password = data.get('password')
@@ -194,9 +283,8 @@ def apiregister():
     if errors:
         return jsonify({"success": False, "errors": errors}), 400
 
-    # Insert user into DB with email
     apiRegister.handle_register(data)
 
     return jsonify({"success": True, "message": f"Welcome, {username}!"}), 200
 if __name__ == '__main__':
-    app.run()
+    app.run(debug=True, use_reloader=False)
