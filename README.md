@@ -25,4 +25,15 @@ docker compose build
 docker compose up
 ```
 
-make sure that file wait-for-mysql.sh is set for LF file system unicode so that docker will be able to execute it.
+## MySQL user init
+make sure the user configured in env is also being build in your MySQL Server
+```mysql
+CREATE USER IF NOT EXISTS 'shrek'@'%' IDENTIFIED BY 'IHateDonkey';
+GRANT ALL PRIVILEGES ON *.* TO 'shrek'@'%' WITH GRANT OPTION;
+FLUSH PRIVILEGES;
+```
+
+like that ^^
+
+
+#### make sure that file wait-for-mysql.sh is set for LF file system unicode so that docker will be able to execute it.
