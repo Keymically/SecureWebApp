@@ -13,7 +13,8 @@ from server_logic import apiRegister
 from server_logic import login as APIlogin
 import bleach
 from server_logic.utils import *
-
+from flask_limiter import Limiter
+from flask_limiter.util import get_remote_address
 
 def sanitize(input_str):
     return bleach.clean(input_str, tags=[], attributes={}, strip=True)
@@ -23,6 +24,11 @@ load_dotenv()
 app = Flask(__name__)
 app.secret_key = os.getenv('HMAC_SECRET_KEY')
 
+limiter = Limiter(
+    get_remote_address,
+    app=app,
+    default_limits=[]
+)
 def get_db_connection():
     return mysql.connector.connect(
         host=getenv('DB_HOST'),
@@ -280,6 +286,7 @@ def reset_password():
     conn.close()
     return jsonify({'message': 'Password updated successfully'}), 200
 @app.route('/api/login', methods=['POST'])
+@limiter.limit("3 per 5 minutes")
 def api_login():
     data = request.get_json()
     if not data:
