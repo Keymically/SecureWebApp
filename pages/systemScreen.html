@@ -71,6 +71,10 @@
     <button type="submit">Register</button>
 </form>
 
+<div style="margin-top: 30px;">
+    <input type="text" id="searchInput" placeholder="Search by First or Last Name" style="padding: 8px; width: 300px; border-radius: 5px; border: 1px solid #aaa;" />
+</div>
+
 <h2 style="margin-top: 30px; color:#4A3F2A;">Customer List</h2>
 <table id="customerTable">
     <thead>
@@ -87,6 +91,17 @@
     </tbody>
 </table>
 <script>
+    document.getElementById("searchInput").addEventListener("input", function () {
+        const filter = this.value.toLowerCase();
+        const rows = document.querySelectorAll("#customerTable tbody tr");
+
+        rows.forEach(row => {
+            const firstName = row.cells[0].textContent.toLowerCase();
+            const lastName = row.cells[1].textContent.toLowerCase();
+            const match = firstName.includes(filter) || lastName.includes(filter);
+            row.style.display = match ? "" : "none";
+        });
+    });
     document.getElementById("registerForm").addEventListener("submit", function (e) {
         e.preventDefault();
         debugger;
