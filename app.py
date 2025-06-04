@@ -11,8 +11,12 @@ import random
 import string
 from server_logic import apiRegister
 from server_logic import login as APIlogin
+import bleach
 from server_logic.utils import *
 
+
+def sanitize(input_str):
+    return bleach.clean(input_str, tags=[], attributes={}, strip=True)
 
 #test
 load_dotenv()
@@ -147,11 +151,11 @@ def systemScreen():
 @app.route('/add_customer', methods=['POST'])
 def add_customer():
     data = request.get_json()
-    first_name = data.get('firstName')
-    last_name = data.get('lastName')
-    phone = data.get('phone')
-    bday = data.get('bday')
-    email = data.get('email')
+    first_name = sanitize(data.get('firstName', ''))
+    last_name = sanitize(data.get('lastName', ''))
+    phone = sanitize(data.get('phone', ''))
+    bday = sanitize(data.get('bday', ''))
+    email = sanitize(data.get('email', ''))
 
     conn = get_db_connection()
     cursor = conn.cursor()
