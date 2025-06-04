@@ -1,5 +1,6 @@
 import bcrypt
 import mysql.connector
+from password_strength import PasswordPolicy
 from os import getenv
 import hmac
 import hashlib

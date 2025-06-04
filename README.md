@@ -35,5 +35,10 @@ FLUSH PRIVILEGES;
 
 like that ^^
 
-
 #### make sure that file wait-for-mysql.sh is set for LF file system unicode so that docker will be able to execute it.
+
+## for the Forgot Password functionalities:
+you will need to sign up to the "mailtrap" service:
+https://mailtrap.io/
+
+then copy the username & password credentials from your virtual inbox to your local website server in the project (under the forgot password path in [app.py] )
