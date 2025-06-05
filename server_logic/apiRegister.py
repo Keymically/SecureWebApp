@@ -63,10 +63,10 @@ def hash_pass_with_hmac(password):
 
 def validate_user(username, password, email):
     errors = []
-
+    fixed_email= email.strip().lower()
     conn = get_db_connection()
     cursor = conn.cursor()
-    cursor.execute("SELECT * FROM users WHERE email = %s", (email,))
+    cursor.execute("SELECT * FROM users WHERE email = %s", (fixed_email,))
     if cursor.fetchone():
         errors.append("Email already registered.")
     cursor.close()
